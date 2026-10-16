@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0A1733">
+  <link rel="icon" href="data:,">
+  <title>Airless Tire Design — SophiStudio</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="SophiStudio home">
+      <span>Sophi Studio</span>
+    </a>
+    <div class="product-title">Airless Tire Design <span class="beta">BETA</span></div>
+    <div class="status"><span class="status-dot"></span> Parametric CAD ready</div>
+  </header>
+
+  <main class="workspace">
+    <aside class="control-panel">
+      <div class="panel-heading">
+        <span class="eyebrow">DESIGN PARAMETERS</span>
+        <button id="reset-button" class="text-button">Reset</button>
+      </div>
+
+      <fieldset class="mode-switch" aria-label="Airless tire pattern">
+        <label><input type="radio" name="pattern" value="honeycomb" checked><span>Honeycomb straight</span></label>
+        <label><input type="radio" name="pattern" value="vertical_spoke"><span>Vertical spoke</span></label>
+        <label><input type="radio" name="pattern" value="s_curve"><span>S-CURVE spoke</span></label>
+        <label><input type="radio" name="pattern" value="auxetic"><span>Auxetic shape</span></label>
+      </fieldset>
+
+      <section class="parameter-group">
+        <h2>Envelope</h2>
+        <div class="input-grid">
+          <label>Outer diameter <span><input data-key="outer_diameter" type="number" value="160" min="20" step="1"> mm</span></label>
+          <label>Inner diameter <span><input data-key="inner_diameter" type="number" value="80" min="5" step="1"> mm</span></label>
+          <label>Tire width <span><input data-key="tire_width" type="number" value="45" min="1" step="1"> mm</span></label>
+        </div>
+      </section>
+
+      <section class="parameter-group">
+        <h2>Boundary rings</h2>
+        <div class="input-grid two-up">
+          <label>OD thickness <span><input data-key="outer_band" type="number" value="4" min="0.5" step="0.5"> mm</span></label>
+          <label>ID thickness <span><input data-key="inner_band" type="number" value="2" min="0.5" step="0.5"> mm</span></label>
+        </div>
+      </section>
+
+      <section class="parameter-group" id="honeycomb-parameters">
+        <h2 id="cell-heading">Honeycomb</h2>
+        <div class="input-grid two-up">
+          <label>Cells / layer <span><input data-key="cells_per_layer" type="number" value="20" min="3" max="80" step="1"></span></label>
+          <label>Layers <span><input data-key="layers" type="number" value="3" min="1" max="12" step="1"></span></label>
+          <label>Wall thickness <span><input data-key="web_thickness" type="number" value="2" min="0.2" step="0.1"> mm</span></label>
+          <label id="auxetic-depth-field" hidden>Inward cell depth <span><input data-key="auxetic_depth" type="number" value="0.25" min="0.05" max="0.4" step="0.01"></span></label>
+        </div>
+      </section>
+
+      <section class="parameter-group" id="spoke-parameters" hidden>
+        <h2 id="spoke-heading">Vertical spoke</h2>
+        <div class="input-grid">
+          <label>Curve thickness <span><input data-key="spoke_thickness" type="number" value="2" min="0.2" step="0.1"> mm</span></label>
+          <label>Number of curves <span><input data-key="spoke_count" type="number" value="32" min="3" max="120" step="1"></span></label>
+          <label id="curve-distance-field">Curve distance <span><input data-key="spoke_distance" type="number" value="8" min="0" step="0.5"> mm</span></label>
+          <label id="s-ratio-field" hidden>S-curve ratio <span><input data-key="s_curve_ratio" type="number" value="0.15" min="0" max="0.3" step="0.01"></span></label>
+        </div>
+        <p class="export-help" id="curve-help">Curve distance is the sideways bow at the middle of each spoke.</p>
+      </section>
+
+      <section class="parameter-group" id="auxetic-dimensions" hidden>
+        <h2>One cell dimensions</h2>
+        <p class="export-help">Nominal dimensions at the middle of each layer, before wall offset. Outer-layer cells are wider.</p>
+        <div class="input-grid">
+          <label>Layer to inspect <span><input id="cell-layer" type="number" value="1" min="1" step="1"></span></label>
+          <label>Cell height H <span><input id="cell-height" type="number" min="1" step="0.1"> mm</span></label>
+          <label>Cell width W <span><input id="cell-width" type="number" min="1" step="0.1"> mm</span></label>
+        </div>
+        <p class="export-help">H — radial height of one repeat. Editing H adjusts the layer count to fit the ring gap.<br>W — circumferential width of one repeat. Editing W adjusts cells per layer to fit the circumference. Values snap to a complete pattern.</p>
+        <dl class="summary">
+          <div><dt>Waist width w</dt><dd id="cell-waist">—</dd></div>
+          <div><dt>Inward depth d</dt><dd id="cell-depth">—</dd></div>
+          <div><dt>Re-entrant angle θ</dt><dd id="cell-angle">—</dd></div>
+        </dl>
+        <p class="export-help">w — width at the narrow middle.<br>d — inward displacement of each side, equal to W × inward cell depth.<br>θ — side inclination from the radial direction in the locally unwrapped cell.<br>Wall thickness t — normal thickness of the connecting ribs.</p>
+      </section>
+
+      <div id="validation-message" class="validation-message" role="status">Geometry ready</div>
+    </aside>
+
+    <section class="stage">
+      <div class="stage-toolbar">
+        <div>
+          <span class="eyebrow" id="view-label">LIVE 3D VIEW</span>
+          <h1 id="design-name">Expanding honeycomb</h1>
+        </div>
+        <div class="view-actions">
+          <button id="view-2d" class="icon-button" aria-label="2D view">2D</button>
+          <button id="view-3d" class="icon-button active" aria-label="3D view">3D</button>
+          <button id="fit-button" class="icon-button" title="Fit view" aria-label="Fit view">⌗</button>
+          <button id="grid-button" class="icon-button active" title="Toggle grid" aria-label="Toggle grid">▦</button>
+        </div>
+      </div>
+      <div id="preview-shell" class="preview-shell grid-on">
+        <canvas id="preview-3d" aria-label="Rotatable 3D airless tire model"></canvas>
+        <svg id="preview" viewBox="-100 -100 200 200" role="img" aria-label="Airless tire preview">
+          <defs><clipPath id="web-clip" clipPathUnits="userSpaceOnUse"></clipPath></defs>
+          <g id="tire-shape"></g>
+          <g id="dimension-layer"></g>
+        </svg>
+        <div class="axis axis-x"></div><div class="axis axis-y"></div>
+        <div class="preview-note" id="view-note">Drag to rotate · Scroll to zoom</div>
+      </div>
+    </section>
+
+    <aside class="export-panel">
+      <span class="eyebrow">MODEL OUTPUT</span>
+      <div class="model-card">
+        <div class="model-icon">STEP</div>
+        <div><strong>Manufacturing solid</strong><small>AP214 · millimetres</small></div>
+      </div>
+      <dl class="summary">
+        <div><dt>Pattern</dt><dd id="summary-mode">Honeycomb straight</dd></div>
+        <div><dt id="summary-count-label">Total cells</dt><dd id="summary-cells">60</dd></div>
+        <div><dt>Overall size</dt><dd id="summary-size">160 × 45 mm</dd></div>
+        <div><dt>Web zone</dt><dd id="summary-web">48–72 mm</dd></div>
+      </dl>
+      <button id="export-button" class="export-button">
+        <span>Generate STEP</span><span class="arrow">↗</span>
+      </button>
+      <p class="export-help">Creates an exact CAD solid on the server and downloads it directly.</p>
+      <section class="parameter-group weight-panel" aria-label="Single product weight">
+        <h2>Single product weight</h2>
+        <button id="calculate-weight" class="export-button" type="button">Calculate Weight</button>
+        <div class="weight-progress"><progress id="weight-progress" max="100" value="0" aria-label="Weight calculation stages"></progress><span id="weight-percent">0%</span></div>
+        <p class="export-help">Unchanged geometry recalculates immediately using its measured volume. A new design needs one CAD build: 0% waiting · 25% requested · 75% ready · 100% calculated. Stage progress, not elapsed time.</p>
+        <label class="material-label" for="material-choice">Material</label>
+        <select id="material-choice"><option value="tpu90">TPU 90</option><option value="tpu120">TPU 120</option><option value="custom">Custom material</option></select>
+        <div class="input-grid">
+          <label id="custom-material-field" hidden>Material name <span><input id="material-name" type="text" placeholder="Material name"></span></label>
+          <label>Material density <span><input id="material-density" type="number" min="0.01" step="0.01" value="1.20"> g/cm³</span></label>
+        </div>
+        <p class="export-help">Both TPU presets start at 1.20 g/cm³. Replace with your supplier’s density; edits are kept per material for this session.</p>
+        <dl class="summary">
+          <div><dt>CAD solid volume</dt><dd id="weight-volume">—</dd></div>
+          <div><dt>Solid product weight</dt><dd id="weight-solid">—</dd></div>
+        </dl>
+        <h3>FDM manufacturing</h3>
+        <div class="input-grid">
+          <label>Infill percentage <span><input id="fdm-infill" type="number" min="0" max="100" step="1" value="20"> %</span></label>
+          <label>Wall thickness <span><input id="fdm-wall" type="number" min="0" step="0.1" value="0.8"> mm</span></label>
+        </div>
+        <dl class="summary">
+          <div><dt>Estimated wall volume</dt><dd id="weight-wall">—</dd></div>
+          <div class="weight-total"><dt>FDM estimated weight</dt><dd id="weight-fdm">—</dd></div>
+        </dl>
+        <p class="export-help">Wall volume includes top/bottom skins of the same thickness. Infill fills the remaining material interior, not the tire’s open cells. Thin ribs may print fully solid.</p>
+        <h3>LCD manufacturing</h3>
+        <div class="input-grid"><label>Resin density <span><input id="resin-density" type="number" min="0.01" step="0.01" value="1.20"> g/cm³</span></label></div>
+        <dl class="summary"><div class="weight-total"><dt>LCD estimated weight</dt><dd id="weight-lcd">—</dd></div></dl>
+        <p id="weight-status" class="export-help" role="status">Calculating CAD volume…</p>
+        <p class="export-help">LCD assumes a solid print of the CAD geometry. FDM uses an approximate shell offset, not a slicer simulation. Excludes supports, brim and printing waste.</p>
+      </section>
+      <div class="divider"></div>
+      <div class="design-note">
+        <span class="note-number">01</span>
+        <p id="pattern-note">Outer and inner cells are trimmed by circular boundaries for clean ring transitions.</p>
+      </div>
+    </aside>
+  </main>
+  <script src="/viewer3d.js"></script>
+  <script src="/weight.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
