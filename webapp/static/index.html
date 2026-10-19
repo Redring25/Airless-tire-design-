@@ -162,6 +162,26 @@
         <p id="weight-status" class="export-help" role="status">Calculating CAD volume…</p>
         <p class="export-help">LCD assumes a solid print of the CAD geometry. FDM uses an approximate shell offset, not a slicer simulation. Excludes supports, brim and printing waste.</p>
       </section>
+      <section class="parameter-group quote-panel" aria-label="Manufacturing quotation">
+        <h2>Manufacturing quotation</h2>
+        <div class="input-grid">
+          <label>Method <span><select id="quote-method"><option value="fdm">FDM</option><option value="lcd">LCD</option></select></span></label>
+          <label>Quantity <span><input id="quote-quantity" type="number" min="1" step="1" value="1"> pcs</span></label>
+          <label>Material price <span><input id="quote-material-price" type="number" min="0" step="0.01" value="0"> ¥/kg</span></label>
+          <label>Machine / setup <span><input id="quote-setup-cost" type="number" min="0" step="0.01" value="0"> ¥</span></label>
+          <label>Additional cost <span><input id="quote-additional-cost" type="number" min="0" step="0.01" value="0"> ¥</span></label>
+        </div>
+        <dl class="summary">
+          <div><dt>Weight used / part</dt><dd id="quote-part-weight">—</dd></div>
+          <div><dt>Total material weight</dt><dd id="quote-total-weight">—</dd></div>
+          <div><dt>Material cost</dt><dd id="quote-material-cost">—</dd></div>
+          <div><dt>Base price</dt><dd id="quote-base">—</dd></div>
+          <div><dt>Tax (15%)</dt><dd id="quote-tax">—</dd></div>
+          <div class="quote-total"><dt>Total quotation</dt><dd id="quote-total">—</dd></div>
+        </dl>
+        <p id="quote-status" class="export-help" role="status">Calculate weight before creating a quotation.</p>
+        <div class="quote-actions"><button id="export-quotation-xlsx" class="secondary-button" type="button" disabled>Export Excel</button><button id="export-quotation-pdf" class="secondary-button" type="button" disabled>Export PDF</button></div>
+      </section>
       <div class="divider"></div>
       <div class="design-note">
         <span class="note-number">01</span>
@@ -171,6 +191,9 @@
   </main>
   <script src="/viewer3d.js"></script>
   <script src="/weight.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <script src="/quotation.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>

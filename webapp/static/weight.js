@@ -29,6 +29,9 @@ if(typeof document!=='undefined')(()=>{
       for(const [key,id] of [['solid','weight-solid'],['fdm','weight-fdm'],['lcd','weight-lcd']])el(id).textContent=result[key].toFixed(1)+' g';
       el('weight-wall').textContent=result.wallPercent.toFixed(1)+'%';
       el('weight-volume').textContent=(model.volume_mm3/1000).toFixed(2)+' cm³';
+      const materialName=el('material-choice').selectedOptions[0].textContent;
+      const tireSummary={pattern:document.getElementById('summary-mode').textContent,outerDiameterMm:Number(document.querySelector('[data-key="outer_diameter"]').value),innerDiameterMm:Number(document.querySelector('[data-key="inner_diameter"]').value),tireWidthMm:Number(document.querySelector('[data-key="tire_width"]').value)};
+      window.dispatchEvent(new CustomEvent('quotation-weights-ready',{detail:{fdmWeightG:result.fdm,lcdWeightG:result.lcd,materialName,tireSummary}}));
       progress(100,'Complete · approximate weight of one tire',false);
     }catch(error){progress(75,error.message,false);}
   }
@@ -46,8 +49,8 @@ if(typeof document!=='undefined')(()=>{
   });
   el('material-density').addEventListener('input',()=>{densities[selected]=Number(el('material-density').value);calculate();});
   ['resin-density','fdm-infill','fdm-wall'].forEach(id=>el(id).addEventListener('input',calculate));
-  window.addEventListener('model-pending',()=>{clear('Waiting for CAD calculation…');progress(0,'Waiting for CAD calculation…',false);});
+  window.addEventListener('model-pending',()=>{clear('Waiting for CAD calculation…');window.dispatchEvent(new Event('quotation-weights-invalid'));progress(0,'Waiting for CAD calculation…',false);});
   window.addEventListener('model-building',()=>progress(25,'Building CAD model and measuring volume…',true));
-  window.addEventListener('model-error',e=>{clear(e.detail);progress(25,'Calculation failed: '+e.detail,false);});
+  window.addEventListener('model-error',e=>{clear(e.detail);window.dispatchEvent(new Event('quotation-weights-invalid'));progress(25,'Calculation failed: '+e.detail,false);});
   window.addEventListener('model-ready',e=>{model=e.detail;progress(75,'CAD ready · calculating weight…',true);requestAnimationFrame(()=>calculate());});
 })();

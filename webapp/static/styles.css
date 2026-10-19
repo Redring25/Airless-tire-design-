@@ -99,5 +99,11 @@ body { font-family: "Segoe UI", Arial, sans-serif; color: var(--ink); background
 #material-choice { width:100%; padding:9px; border:1px solid var(--line); border-radius:7px; background:white; color:var(--ink); margin-bottom:14px; }
 .weight-total dd { color:var(--accent); font-size:14px; }
 .weight-panel .input-grid input { max-width:110px; }
+.quote-panel select { width:100%; border:1px solid var(--line); border-radius:7px; background:#f8fafc; color:var(--ink); padding:8px; font:600 12px "Segoe UI",Arial,sans-serif; }
+.quote-panel .summary { margin-top:14px; }
+.quote-total dd { color:var(--accent); font-size:15px; }
+.quote-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px; }
+.secondary-button { border:1px solid var(--accent); border-radius:8px; background:#fff; color:var(--accent); padding:10px; font:600 11px "Segoe UI",Arial,sans-serif; cursor:pointer; }
+.secondary-button:disabled { color:#8b99ab; border-color:var(--line); cursor:not-allowed; }
 @media (max-width: 1000px) { body { overflow: auto; } .topbar { grid-template-columns: 1fr auto; } .product-title { display: none; } .workspace { height: auto; grid-template-columns: 300px 1fr; } .export-panel { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); } .stage { min-height: 640px; } }
 @media (max-width: 720px) { .topbar { grid-template-columns: 1fr; } .status { display: none; } .workspace { display: block; } .control-panel, .export-panel { border: 0; } .stage { min-height: 520px; padding: 20px; } .input-grid.two-up { grid-template-columns: 1fr; } .preview-shell { min-height: 400px; } }
