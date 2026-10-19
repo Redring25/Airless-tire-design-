@@ -1,10 +1,34 @@
-// GitHub Pages preview: no Python/CAD backend is available here.
-const tireModel={clear(){}};
-const tireViewer={update(){},fit(){},setActive(){}};
-document.querySelector('.status').textContent='GitHub Pages · 2D preview';
-document.querySelector('.weight-panel').innerHTML='<h2>Static preview only</h2><p class="export-help">Explore all four patterns and adjust their dimensions in 2D. STEP export, 3D CAD rendering and CAD-based weight calculations require the Python server. Download the source from GitHub and follow webapp/README.md to use the full application locally.</p><a href="https://github.com/Redring25/Airless-tire-design-/tree/main/webapp">Full application source and instructions</a>';
-document.querySelector('#view-3d').disabled=true;
-document.querySelector('#view-3d').title='Requires the Python CAD server';
-document.querySelector('#export-button').title='STEP export requires the Python CAD server';
-document.querySelector('#export-button span').textContent='STEP · local app only';
-document.querySelector('.export-panel > .export-help').textContent='This GitHub Pages version is an interactive 2D preview. No CAD backend is connected.';
+// Browser-native renderer for GitHub Pages. Geometry remains local to the visitor's browser.
+(function(){
+  const canvas=document.querySelector('#preview-3d'),status=document.querySelector('.status');
+  status.innerHTML='<span class="status-dot"></span>Browser 3D · STL ready';
+  const card=document.querySelector('.model-card');card.querySelector('.model-icon').textContent='STL';card.querySelector('strong').textContent='Browser manufacturing mesh';card.querySelector('small').textContent='STL · millimetres · local export';
+  document.querySelector('#export-button span').textContent='Download STL';
+  document.querySelector('.export-panel > .export-help').textContent='Creates a triangulated STL directly in this browser. No design data is uploaded.';
+  let renderer,scene,camera,group,active=true,dragging=false,last,azimuth=.7,elevation=.6,distance=230;
+  function init(){
+    if(!window.THREE)return false;renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(38,1,.1,2000);
+    scene.add(new THREE.HemisphereLight(0xe7f0ff,0x0a1733,2.2));const light=new THREE.DirectionalLight(0xffffff,2.4);light.position.set(120,120,180);scene.add(light);group=new THREE.Group();scene.add(group);new ResizeObserver(draw).observe(canvas);
+    canvas.addEventListener('pointerdown',e=>{dragging=true;last=[e.clientX,e.clientY];canvas.setPointerCapture(e.pointerId)});canvas.addEventListener('pointermove',e=>{if(!dragging)return;azimuth+=(e.clientX-last[0])*.01;elevation=Math.max(-1.2,Math.min(1.2,elevation-(e.clientY-last[1])*.01));last=[e.clientX,e.clientY];draw()});canvas.addEventListener('pointerup',()=>dragging=false);canvas.addEventListener('wheel',e=>{e.preventDefault();distance=Math.max(90,Math.min(600,distance*Math.exp(e.deltaY*.001)));draw()},{passive:false});return true;
+  }
+  function draw(){if(!renderer||!active)return;const r=canvas.getBoundingClientRect();if(!r.width||!r.height)return;renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;camera.position.set(distance*Math.cos(elevation)*Math.cos(azimuth),distance*Math.cos(elevation)*Math.sin(azimuth),distance*Math.sin(elevation));camera.lookAt(0,0,0);camera.updateProjectionMatrix();renderer.render(scene,camera)}
+  function annulus(outer,inner,width){const shape=new THREE.Shape();shape.absarc(0,0,outer,0,Math.PI*2,false);const hole=new THREE.Path();hole.absarc(0,0,inner,0,Math.PI*2,true);shape.holes.push(hole);return new THREE.ExtrudeGeometry(shape,{depth:width,bevelEnabled:false,curveSegments:48});}
+  function rebuild(p){
+    if(!renderer&&!init())throw Error('WebGL is unavailable. Switch to the 2D view.');const ri=p.inner_diameter/2,ro=p.outer_diameter/2,wi=ri+p.inner_band,wo=ro-p.outer_band,width=p.tire_width;if(!(ri>0&&ro>ri&&wo>wi&&width>0))throw Error('Check inner/outer diameters and ring thicknesses.');
+    group.clear();const z=-width/2,ringMaterial=new THREE.MeshStandardMaterial({color:0x0a1733,roughness:.58,metalness:.12}),webMaterial=new THREE.MeshStandardMaterial({color:0x174276,roughness:.62});for(const geometry of [annulus(ro,wo,width),annulus(wi,ri,width)]){const mesh=new THREE.Mesh(geometry,ringMaterial);mesh.position.z=z;group.add(mesh)}
+    const count=p.mode==='honeycomb'||p.mode==='auxetic'?Math.max(6,Math.round(p.cells_per_layer)):Math.max(6,Math.round(p.spoke_count)),layers=p.mode==='honeycomb'||p.mode==='auxetic'?Math.max(1,Math.round(p.layers)):1,span=wo-wi,web=p.mode==='honeycomb'||p.mode==='auxetic'?p.web_thickness:p.spoke_thickness;
+    for(let layer=0;layer<layers;layer++)for(let i=0;i<count;i++){const a=(i+(layer%2?.5:0))*Math.PI*2/count,r=wi+span*(layer+.5)/layers,length=p.mode==='honeycomb'||p.mode==='auxetic'?Math.max(6,2*Math.PI*r/count*.68):span+Math.min(p.inner_band,p.outer_band),mesh=new THREE.Mesh(new THREE.BoxGeometry(length,web,width*.96),webMaterial);mesh.position.set(r*Math.cos(a),r*Math.sin(a),0);mesh.rotation.z=a+Math.PI/2;if(p.mode==='vertical_spoke')mesh.rotation.z=a+(p.spoke_distance/span)*.28;if(p.mode==='s_curve')mesh.rotation.z=a+Math.sin(a*2)*p.s_curve_ratio;if(p.mode==='auxetic')mesh.rotation.z=a+Math.PI/2+(layer%2?.35:-.35);group.add(mesh)}
+    group.updateMatrixWorld(true);draw();const volumeMm3=group.children.reduce((sum,mesh)=>sum+volume(mesh),0);window.currentBrowserModel={parameters:{...p},group,volumeMm3};window.dispatchEvent(new CustomEvent('model-ready',{detail:{volumeMm3}}));
+  }
+  function volume(mesh){const g=mesh.geometry.clone().toNonIndexed(),p=g.getAttribute('position'),a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),temp=new THREE.Vector3();let total=0;for(let i=0;i<p.count;i+=3){a.fromBufferAttribute(p,i).applyMatrix4(mesh.matrixWorld);b.fromBufferAttribute(p,i+1).applyMatrix4(mesh.matrixWorld);c.fromBufferAttribute(p,i+2).applyMatrix4(mesh.matrixWorld);total+=a.dot(temp.copy(b).cross(c))/6}g.dispose();return Math.abs(total)}
+  function triangles(){const out=[];group.updateMatrixWorld(true);group.traverse(mesh=>{if(!mesh.isMesh)return;const g=mesh.geometry.clone().toNonIndexed(),p=g.getAttribute('position'),a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();for(let i=0;i<p.count;i+=3){a.fromBufferAttribute(p,i).applyMatrix4(mesh.matrixWorld);b.fromBufferAttribute(p,i+1).applyMatrix4(mesh.matrixWorld);c.fromBufferAttribute(p,i+2).applyMatrix4(mesh.matrixWorld);out.push([[a.x,a.y,a.z],[b.x,b.y,b.z],[c.x,c.y,c.z]])}g.dispose()});return out}
+  window.downloadBrowserStl=()=>{if(!window.currentBrowserModel)return;const model=window.currentBrowserModel,blob=new Blob([window.SophiStl.stlFromTriangles(triangles())],{type:'model/stl'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=window.SophiStl.createStlFilename(model.parameters);a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+  window.tireModel={clear(){window.dispatchEvent(new Event('model-pending'))},update(parameters,done=()=>{}){try{rebuild(parameters);done(window.currentBrowserModel)}catch(error){window.dispatchEvent(new CustomEvent('model-error',{detail:error.message}));throw error}}};
+  window.tireViewer={update:window.tireModel.update,fit(){azimuth=.7;elevation=.6;distance=230;draw()},setActive(value){active=value;draw()}};
+  const field=id=>document.querySelector(id),number=id=>Number(field(id).value)||0;
+  function updateWeight(){const model=window.currentBrowserModel;if(!model)return;const volume=model.volumeMm3/1000,density=number('#material-density')||1.2,resin=number('#resin-density')||density,infill=Math.max(0,Math.min(100,number('#fdm-infill')))/100,wall=Math.max(0,number('#fdm-wall'));
+    const shell=Math.min(volume,Math.PI*((model.parameters.outer_diameter/2)**2-(model.parameters.inner_diameter/2)**2)*Math.min(model.parameters.tire_width,wall*2)/1000);const fdmVolume=shell+(volume-shell)*infill;
+    field('#weight-volume').textContent=`${volume.toFixed(1)} cm³`;field('#weight-solid').textContent=`${(volume*density).toFixed(1)} g`;field('#weight-wall').textContent=`${shell.toFixed(1)} cm³`;field('#weight-fdm').textContent=`${(fdmVolume*density).toFixed(1)} g`;field('#weight-lcd').textContent=`${(volume*resin).toFixed(1)} g`;field('#weight-percent').textContent='100%';field('#weight-progress').value=100;field('#weight-status').textContent='Mesh-based weight estimate ready.';
+  }
+  window.addEventListener('model-ready',updateWeight);field('#calculate-weight').addEventListener('click',updateWeight);['#material-density','#resin-density','#fdm-infill','#fdm-wall'].forEach(id=>field(id).addEventListener('input',updateWeight));
+})();

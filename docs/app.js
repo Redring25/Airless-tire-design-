@@ -69,12 +69,12 @@ function render(){
       $('#cell-height').value=height.toFixed(2);$('#cell-width').value=width.toFixed(2);
       $('#cell-waist').textContent=(width-2*depth).toFixed(2)+' mm';$('#cell-depth').textContent=depth.toFixed(2)+' mm';$('#cell-angle').textContent=(Math.atan2(depth,height/2)*180/Math.PI).toFixed(1)+'°';
     }
-    $('#validation-message').textContent='2D preview ready · static website';$('#validation-message').classList.remove('error');$('#export-button').disabled=true;
+    $('#validation-message').textContent='Browser mesh ready · STL export enabled';$('#validation-message').classList.remove('error');$('#export-button').disabled=false;
     tireViewer.update(p);
   }catch(error){$('#validation-message').textContent=error.message;$('#validation-message').classList.add('error');$('#export-button').disabled=true}
 }
 
-async function exportStep(){const button=$('#export-button'),old=button.querySelector('span').textContent;button.disabled=true;button.querySelector('span').textContent='Building solid…';try{const response=await fetch('/api/export-step',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(values())});if(!response.ok){const data=await response.json();throw Error(data.detail||'STEP generation failed')}const blob=await response.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=response.headers.get('content-disposition')?.match(/filename="?([^";]+)"?/)?.[1]||'SophiStudio-airless.step';a.click();URL.revokeObjectURL(url);$('#validation-message').textContent='STEP generated successfully'}catch(error){$('#validation-message').textContent=error.message;$('#validation-message').classList.add('error')}finally{button.disabled=false;button.querySelector('span').textContent=old}}
+function exportStep(){try{window.downloadBrowserStl();$('#validation-message').textContent='STL downloaded successfully'}catch(error){$('#validation-message').textContent=error.message;$('#validation-message').classList.add('error')}}
 
 $$('[data-key]').forEach(input=>input.addEventListener('input',render));
 $('#cell-layer').addEventListener('change',render);
@@ -86,4 +86,4 @@ $('#reset-button').addEventListener('click',()=>{$$('[data-key]').forEach(el=>el
 $('#grid-button').addEventListener('click',e=>{e.currentTarget.classList.toggle('active');$('#preview-shell').classList.toggle('grid-on')});
 function setView(mode){viewMode=mode;const is3d=mode==='3d';$('#preview-shell').classList.toggle('view-3d',is3d);$('#view-3d').classList.toggle('active',is3d);$('#view-2d').classList.toggle('active',!is3d);$('#view-label').textContent=is3d?'LIVE 3D VIEW':'LIVE TOP VIEW';$('#view-note').textContent=is3d?'Building 3D model…':'Circular ID / OD trim enabled';tireViewer.setActive(is3d);render();}
 $('#view-2d').addEventListener('click',()=>setView('2d'));$('#view-3d').addEventListener('click',()=>setView('3d'));
-$('#fit-button').addEventListener('click',()=>{if(viewMode==='3d')tireViewer.fit();else render();});setView('2d');
+$('#fit-button').addEventListener('click',()=>{if(viewMode==='3d')tireViewer.fit();else render();});setView('3d');
