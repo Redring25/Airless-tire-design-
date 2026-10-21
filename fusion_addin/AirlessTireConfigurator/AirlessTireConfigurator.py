@@ -5,7 +5,7 @@ from lib.configurator import COMMANDS, PANEL_ID, component_name, pattern_paramet
 from lib.geometry import create_tire_component
 
 WORKSPACE_ID = 'FusionSolidEnvironment'
-TAB_ID = 'SolidTab'
+CONFIGURATOR_TAB_ID = 'SophiStudioAirlessTab'
 handlers = []
 
 
@@ -53,19 +53,33 @@ class CreatedHandler(adsk.core.CommandCreatedEventHandler):
 
 def run(context):
     ui = adsk.core.Application.get().userInterface
-    workspace = ui.workspaces.itemById(WORKSPACE_ID); tab = workspace.toolbarTabs.itemById(TAB_ID)
-    panel = tab.toolbarPanels.itemById(PANEL_ID) or tab.toolbarPanels.add(PANEL_ID, 'Airless Tire Configurator', '', False)
-    for item in COMMANDS:
-        definition = ui.commandDefinitions.itemById(item['id']) or ui.commandDefinitions.addButtonDefinition(item['id'], item['name'], f"Create a {item['name']} airless tire.", '')
-        handler = CreatedHandler(item['pattern']); definition.commandCreated.add(handler); handlers.append(handler)
-        if not panel.controls.itemById(item['id']): panel.controls.addCommand(definition)
+    try:
+        workspace = ui.workspaces.itemById(WORKSPACE_ID)
+        if not workspace:
+            raise RuntimeError('The Design workspace is unavailable.')
+        tab = workspace.toolbarTabs.itemById(CONFIGURATOR_TAB_ID)
+        if not tab:
+            tab = workspace.toolbarTabs.add(CONFIGURATOR_TAB_ID, 'Airless Tire Configurator')
+        panel = tab.toolbarPanels.itemById(PANEL_ID)
+        if not panel:
+            panel = tab.toolbarPanels.add(PANEL_ID, 'Generators')
+        for item in COMMANDS:
+            definition = ui.commandDefinitions.itemById(item['id'])
+            if not definition:
+                definition = ui.commandDefinitions.addButtonDefinition(item['id'], item['name'], f"Create a {item['name']} airless tire.", '')
+            handler = CreatedHandler(item['pattern']); definition.commandCreated.add(handler); handlers.append(handler)
+            if not panel.controls.itemById(item['id']):
+                control = panel.controls.addCommand(definition)
+                control.isPromoted = True
+    except:
+        ui.messageBox('Airless Tire Configurator could not start.\n\n' + traceback.format_exc())
 
 
 def stop(context):
     ui = adsk.core.Application.get().userInterface
-    workspace = ui.workspaces.itemById(WORKSPACE_ID); tab = workspace.toolbarTabs.itemById(TAB_ID)
-    panel = tab.toolbarPanels.itemById(PANEL_ID)
-    if panel: panel.deleteMe()
+    workspace = ui.workspaces.itemById(WORKSPACE_ID)
+    tab = workspace.toolbarTabs.itemById(CONFIGURATOR_TAB_ID) if workspace else None
+    if tab: tab.deleteMe()
     for item in COMMANDS:
         definition = ui.commandDefinitions.itemById(item['id'])
         if definition: definition.deleteMe()

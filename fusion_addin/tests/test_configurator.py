@@ -34,6 +34,11 @@ class ConfiguratorTests(unittest.TestCase):
         self.assertFalse(manifest['runOnStartup'])
         self.assertEqual(PANEL_ID, 'SophiStudioAirlessPanel')
 
+    def test_addin_creates_its_own_configurator_tab(self):
+        source = (ADDIN / 'AirlessTireConfigurator.py').read_text(encoding='utf-8')
+        self.assertIn("CONFIGURATOR_TAB_ID = 'SophiStudioAirlessTab'", source)
+        self.assertIn("toolbarTabs.add(CONFIGURATOR_TAB_ID, 'Airless Tire Configurator')", source)
+
 
 if __name__ == '__main__':
     unittest.main()
