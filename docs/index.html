@@ -162,6 +162,30 @@
         <p id="weight-status" class="export-help" role="status">Calculating CAD volume…</p>
         <p class="export-help">LCD assumes a solid print of the CAD geometry. FDM uses an approximate shell offset, not a slicer simulation. Excludes supports, brim and printing waste.</p>
       </section>
+      <section class="parameter-group quote-panel" aria-label="Manufacturing quotation">
+        <h2>Quotation</h2>
+        <p class="export-help">Enter client details first. This GitHub Pages quotation uses your manual estimated part weight; client data stays in this browser until export.</p>
+        <div class="input-grid">
+          <label>Client name <span><input id="quote-client-name" type="text" autocomplete="name" placeholder="Required"></span></label>
+          <label>Email <span><input id="quote-client-email" type="email" autocomplete="email" placeholder="Required"></span></label>
+          <label>Phone <span><input id="quote-client-phone" type="tel" autocomplete="tel" placeholder="Required"></span></label>
+          <label>Material <span><select id="quote-material"><option data-price="0.35">TPU 90</option><option data-price="0.42">TPU 120</option><option data-price="0">Custom material</option></select></span></label>
+          <label>Estimated weight <span><input id="quote-part-weight" type="number" min="0.1" step="0.1" value="0"> g</span></label>
+          <label>Material price <span><input id="quote-price-per-gram" type="number" min="0" step="0.01" value="0.35"> ¥ / g</span></label>
+          <label>Quantity <span><input id="quote-quantity" type="number" min="1" step="1" value="1"> pcs</span></label>
+          <label>Machine / setup <span><input id="quote-setup-cost" type="number" min="0" step="0.01" value="0"> ¥</span></label>
+          <label>Additional cost <span><input id="quote-additional-cost" type="number" min="0" step="0.01" value="0"> ¥</span></label>
+          <label>Tax rate <span><input id="quote-tax-rate" type="number" min="0" step="0.1" value="15"> %</span></label>
+        </div>
+        <dl class="summary">
+          <div><dt>Material cost</dt><dd id="quote-material-cost">—</dd></div>
+          <div><dt>Base price</dt><dd id="quote-base">—</dd></div>
+          <div><dt>Tax</dt><dd id="quote-tax">—</dd></div>
+          <div class="quote-total"><dt>Total quotation</dt><dd id="quote-total">—</dd></div>
+        </dl>
+        <p id="quote-status" class="export-help" role="status">Complete client details and estimated weight to create a quotation.</p>
+        <div class="quote-actions"><button id="export-quotation-xlsx" class="secondary-button" type="button" disabled>Export Excel</button><button id="export-quotation-pdf" class="secondary-button" type="button" disabled>Export PDF</button></div>
+      </section>
       <div class="divider"></div>
       <div class="design-note">
         <span class="note-number">01</span>
@@ -170,6 +194,9 @@
     </aside>
   </main>
   <script src="./static-mode.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <script src="./quotation.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>
