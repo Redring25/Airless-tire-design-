@@ -1,0 +1,11 @@
+{
+  "autodeskProduct": "Fusion360",
+  "type": "addin",
+  "id": "b7f8b325-8032-4fac-8bed-f8d81b63ef9a",
+  "author": "Sophi Studio",
+  "description": "Airless Tire Configurator",
+  "version": "1.0.0",
+  "runOnStartup": false,
+  "supportedOS": "windows|mac",
+  "editEnabled": true
+}
